@@ -544,16 +544,31 @@ leaveBtn.addEventListener('click', () => {
     window.location.reload();
 });
 
-// REAL-TIME SYNC MAGIC
+// REAL-TIME SYNC MAGIC & ANIMATION
 function listenToRoom(roomCode) {
     onValue(ref(db, 'rooms/' + roomCode), (snapshot) => {
         const data = snapshot.val();
         if(!data) return;
 
-        questionText.innerText = data.question;
+        const card = document.querySelector('.card');
+
+        // 🔥 THE FLIP ANIMATION LOGIC
+        // If it's a brand new question (and not just the initial load), animate it!
+        if (questionText.innerText !== "Waiting for question..." && questionText.innerText !== data.question) {
+            card.classList.add('flip-out'); // Start the flip
+            
+            setTimeout(() => {
+                questionText.innerText = data.question; // Swap text while it's invisible
+                card.classList.remove('flip-out');      // Flip it back in
+            }, 300); // 300ms matches the CSS transition speed
+        } else {
+            questionText.innerText = data.question; // Just load normally if it's the first question
+        }
+
         const myAnswer = isPlayer1 ? data.p1Answer : data.p2Answer;
         const partnerAnswer = isPlayer1 ? data.p2Answer : data.p1Answer;
 
+        // RESET UI IF IT'S A NEW QUESTION
         if (myAnswer === "" && partnerAnswer === "") {
             myAnswerInput.value = "";
             submitBtn.innerText = "Submit";
@@ -561,6 +576,7 @@ function listenToRoom(roomCode) {
             partnerAnswerDisplay.innerText = "Waiting...";
             nextBtn.classList.add('hidden'); 
         }
+        // IF BOTH HAVE ANSWERED
         else if (partnerAnswer) {
             if (myAnswer) {
                 partnerAnswerDisplay.innerText = partnerAnswer;
@@ -569,6 +585,7 @@ function listenToRoom(roomCode) {
                 partnerAnswerDisplay.innerText = "Partner answered! Waiting for you...";
             }
         } 
+        // WAITING ON PARTNER
         else {
             partnerAnswerDisplay.innerText = "Waiting...";
         }
