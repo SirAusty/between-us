@@ -5,50 +5,132 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
     margin: 0;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
 .container {
     text-align: center;
     max-width: 400px;
-    width: 90%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
+/* Force hide with !important to prevent CSS conflicts */
 .hidden {
-    display: none;
+    display: none !important; 
+}
+
+/* Stack everything inside the sections cleanly */
+#setup-section, #game-section {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px; /* Adds exact, uniform spacing between elements */
+}
+
+.or-text {
+    margin: 0;
+    color: #888888;
 }
 
 .card {
     background-color: #1e1e1e;
-    padding: 20px;
+    padding: 30px 20px;
     border-radius: 15px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    margin: 20px 0;
-    min-height: 100px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 140px;
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.card h2 {
+    margin: 0;
+    font-size: 1.3rem;
+    line-height: 1.4;
+}
+
+.answers-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
 }
 
 button {
     background-color: #ff4757;
     color: white;
     border: none;
-    padding: 10px 20px;
+    padding: 14px 24px;
     border-radius: 8px;
     cursor: pointer;
     font-size: 16px;
     font-weight: bold;
-    margin: 5px;
+    width: 100%;
+    max-width: 250px;
+    transition: transform 0.1s ease;
+}
+
+button:active {
+    transform: scale(0.95);
+}
+
+button:disabled {
+    background-color: #555555;
+    cursor: not-allowed;
+    transform: none;
 }
 
 input, textarea {
     width: 100%;
-    padding: 10px;
+    padding: 15px;
     border-radius: 8px;
     border: none;
-    margin-bottom: 10px;
+    background-color: #2a2a2a;
+    color: white;
+    font-size: 16px;
     box-sizing: border-box;
     font-family: inherit;
+    resize: none; /* Stops the textarea from being draggable and breaking layout */
+}
+
+input::placeholder, textarea::placeholder {
+    color: #888888;
+}
+
+.status-box {
+    width: 100%;
+    padding: 15px;
+    background-color: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+.status-box p {
+    margin: 0;
+    color: #aaaaaa;
+    font-size: 0.95rem;
+}
+
+#partner-answer-text {
+    display: block;
+    margin-top: 8px;
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.action-btn {
+    background-color: #2ed573;
+    max-width: 100%;
 }
