@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getDatabase, ref, set, get, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-// 🛑 PASTE YOUR CONFIG HERE 🛑
+// 🛑 YOUR CONFIG 🛑
 const firebaseConfig = {
   apiKey: "AIzaSyDvwoCAS8hHMW0KRyM2toaoFZNnP-cuOTE",
   authDomain: "between-us-79b5b.firebaseapp.com",
@@ -27,15 +27,14 @@ const myAnswerInput = document.getElementById('my-answer');
 const submitBtn = document.getElementById('submit-btn');
 const partnerAnswerDisplay = document.getElementById('partner-answer-text');
 const nextBtn = document.getElementById('next-question-btn'); 
-const categorySelect = document.getElementById('category-select'); // NEW: The Category Dropdown
+const categorySelect = document.getElementById('category-select'); 
 
 let currentRoom = null;
 let isPlayer1 = false; 
 
 // RESTRUCTURED: The Question Bank
 const questionBank = {
-    loyalty: [ 
-        // 🔥 PASTE YOUR ENTIRE 100-QUESTION ARRAY HERE 🔥
+    mixed: [ 
         "What's a secret dream you haven't told many people about?",
         "If you could teleport anywhere right now, where would we go?",
         "What is the most embarrassing thing you've ever done?",
@@ -161,7 +160,7 @@ const questionBank = {
         "What's a way I show love without saying the words?",
         "What's the silliest reason you've ever been mad at me?",
         "What's a tradition you want us to start?",
-        "What's something you想 changed your mind about after meeting me?",
+        "What's something you changed your mind about after meeting me?",
         "What's a moment you felt proudest to call me yours?",
         "What's a food you'd want me to cook for you every week?",
         "What's the most 'us' inside joke we have?",
@@ -449,9 +448,6 @@ const questionBank = {
         "What's the best advice you've ever given me?",
         "Sum me up in exactly one sentence."
     ]
-};
-
-    ]
 }; 
 
 // CREATE ROOM
@@ -466,12 +462,14 @@ createBtn.addEventListener('click', () => {
     const randomQuestion = selectedPool[Math.floor(Math.random() * selectedPool.length)];
 
     set(ref(db, 'rooms/' + roomCode), {
-        category: chosenCategory, // Save the category to the database!
+        category: chosenCategory, 
         question: randomQuestion,
         p1Answer: "",
         p2Answer: ""
     }).then(() => {
-        enterGameUI(roomCode);
+        setupSection.classList.add('hidden');
+        gameSection.classList.remove('hidden');
+        roomDisplay.innerText = roomCode;
         listenToRoom(roomCode);
     }).catch(err => alert("Error: " + err.message));
 });
@@ -485,7 +483,9 @@ joinBtn.addEventListener('click', () => {
         if(snapshot.exists()) {
             currentRoom = code;
             isPlayer1 = false; 
-            enterGameUI(code);
+            setupSection.classList.add('hidden');
+            gameSection.classList.remove('hidden');
+            roomDisplay.innerText = code;
             listenToRoom(code);
         } else {
             alert("Room not found! Check the code.");
@@ -510,7 +510,6 @@ submitBtn.addEventListener('click', () => {
 
 // NEXT QUESTION LOGIC
 nextBtn.addEventListener('click', () => {
-    // Ask Firebase what category this room is playing
     get(ref(db, 'rooms/' + currentRoom + '/category')).then((snapshot) => {
         const roomCategory = snapshot.val() || 'mixed'; 
         const selectedPool = questionBank[roomCategory];
@@ -534,33 +533,24 @@ function listenToRoom(roomCode) {
         const myAnswer = isPlayer1 ? data.p1Answer : data.p2Answer;
         const partnerAnswer = isPlayer1 ? data.p2Answer : data.p1Answer;
 
-        // RESET UI IF IT'S A NEW QUESTION
         if (myAnswer === "" && partnerAnswer === "") {
             myAnswerInput.value = "";
             submitBtn.innerText = "Submit";
             submitBtn.disabled = false;
             partnerAnswerDisplay.innerText = "Waiting...";
-            nextBtn.classList.add('hidden'); // Hide the Next button again
+            nextBtn.classList.add('hidden'); 
         }
-        // IF BOTH HAVE ANSWERED
         else if (partnerAnswer) {
             if (myAnswer) {
                 partnerAnswerDisplay.innerText = partnerAnswer;
-                nextBtn.classList.remove('hidden'); // Reveal the Next button!
+                nextBtn.classList.remove('hidden'); 
             } else {
                 partnerAnswerDisplay.innerText = "Partner answered! Waiting for you...";
             }
         } 
-        // WAITING ON PARTNER
         else {
             partnerAnswerDisplay.innerText = "Waiting...";
         }
     });
-}
-
-function enterGameUI(code) {
-    setupSection.classList.add('hidden');
-    gameSection.classList.remove('hidden');
-    roomDisplay.innerText = code;
 }
 
