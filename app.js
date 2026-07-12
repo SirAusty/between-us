@@ -1,8 +1,7 @@
-// 1. Import all the Firebase tools we need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getDatabase, ref, set, get, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-// 2. 🛑 PASTE YOUR CONFIG HERE 🛑
+// 🛑 PASTE YOUR CONFIG HERE 🛑
 const firebaseConfig = {
   apiKey: "AIzaSyDvwoCAS8hHMW0KRyM2toaoFZNnP-cuOTE",
   authDomain: "between-us-79b5b.firebaseapp.com",
@@ -13,11 +12,8 @@ const firebaseConfig = {
   appId: "1:944752928890:web:8a16b700cedfc0abc7b3c3"
 };
 
-// 3. Connect to Firebase
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-
-// --- GAME LOGIC ---
 
 // Get our HTML elements
 const createBtn = document.getElementById('create-room-btn');
@@ -30,29 +26,31 @@ const questionText = document.getElementById('question-text');
 const myAnswerInput = document.getElementById('my-answer');
 const submitBtn = document.getElementById('submit-btn');
 const partnerAnswerDisplay = document.getElementById('partner-answer-text');
+const nextBtn = document.getElementById('next-question-btn'); // NEW BUTTON
 
-// State variables
 let currentRoom = null;
 let isPlayer1 = false; 
 
-// A starter pack of questions!
+// Expanded Question Pool
 const questionsPool = [
     "What's your favorite memory of us?",
     "If you could relive one day with me, which day would it be?",
     "What is one thing I do that makes you smile?",
     "What's a secret dream you haven't told many people about?",
-    "What was your exact first impression of me?"
+    "What was your exact first impression of me?",
+    "What is your biggest relationship fear?",
+    "If we had a free weekend and unlimited money, what would we do?",
+    "What's something nobody knows about you?",
+    "What is the most embarrassing thing you've ever done?"
 ];
 
 // CREATE ROOM
 createBtn.addEventListener('click', () => {
     const roomCode = Math.floor(1000 + Math.random() * 9000).toString();
     currentRoom = roomCode;
-    isPlayer1 = true; // The creator is Player 1
-
+    isPlayer1 = true; 
     const randomQuestion = questionsPool[Math.floor(Math.random() * questionsPool.length)];
 
-    // Save to database
     set(ref(db, 'rooms/' + roomCode), {
         question: randomQuestion,
         p1Answer: "",
@@ -71,7 +69,7 @@ joinBtn.addEventListener('click', () => {
     get(ref(db, 'rooms/' + code)).then((snapshot) => {
         if(snapshot.exists()) {
             currentRoom = code;
-            isPlayer1 = false; // The joiner is Player 2
+            isPlayer1 = false; 
             enterGameUI(code);
             listenToRoom(code);
         } else {
@@ -92,7 +90,19 @@ submitBtn.addEventListener('click', () => {
     update(ref(db, 'rooms/' + currentRoom), updateData);
     
     submitBtn.innerText = "Sent!";
-    submitBtn.disabled = true; // Prevent spamming
+    submitBtn.disabled = true; 
+});
+
+// NEXT QUESTION LOGIC
+nextBtn.addEventListener('click', () => {
+    const randomQuestion = questionsPool[Math.floor(Math.random() * questionsPool.length)];
+    
+    // Wipe the answers and push the new question to the database
+    update(ref(db, 'rooms/' + currentRoom), {
+        question: randomQuestion,
+        p1Answer: "",
+        p2Answer: ""
+    });
 });
 
 // REAL-TIME SYNC MAGIC
@@ -101,21 +111,29 @@ function listenToRoom(roomCode) {
         const data = snapshot.val();
         if(!data) return;
 
-        // Show the question
         questionText.innerText = data.question;
-
-        // Figure out whose answer is whose
         const myAnswer = isPlayer1 ? data.p1Answer : data.p2Answer;
         const partnerAnswer = isPlayer1 ? data.p2Answer : data.p1Answer;
 
-        // Only reveal the partner's answer IF you have also answered (No cheating!)
-        if (partnerAnswer) {
+        // RESET UI IF IT'S A NEW QUESTION
+        if (myAnswer === "" && partnerAnswer === "") {
+            myAnswerInput.value = "";
+            submitBtn.innerText = "Submit";
+            submitBtn.disabled = false;
+            partnerAnswerDisplay.innerText = "Waiting...";
+            nextBtn.classList.add('hidden'); // Hide the Next button again
+        }
+        // IF BOTH HAVE ANSWERED
+        else if (partnerAnswer) {
             if (myAnswer) {
                 partnerAnswerDisplay.innerText = partnerAnswer;
+                nextBtn.classList.remove('hidden'); // Reveal the Next button!
             } else {
                 partnerAnswerDisplay.innerText = "Partner answered! Waiting for you...";
             }
-        } else {
+        } 
+        // WAITING ON PARTNER
+        else {
             partnerAnswerDisplay.innerText = "Waiting...";
         }
     });
@@ -126,3 +144,4 @@ function enterGameUI(code) {
     gameSection.classList.remove('hidden');
     roomDisplay.innerText = code;
 }
+
