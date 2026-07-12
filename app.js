@@ -28,6 +28,8 @@ const submitBtn = document.getElementById('submit-btn');
 const partnerAnswerDisplay = document.getElementById('partner-answer-text');
 const nextBtn = document.getElementById('next-question-btn'); 
 const categorySelect = document.getElementById('category-select'); 
+const leaveBtn = document.getElementById('leave-room-btn');
+const shareBtn = document.getElementById('share-btn'); // NEW SHARE BUTTON
 
 let currentRoom = null;
 let isPlayer1 = false; 
@@ -469,9 +471,11 @@ createBtn.addEventListener('click', () => {
         p1Answer: "",
         p2Answer: ""
     }).then(() => {
-        // 🔥 SAVE TO BROWSER MEMORY
         localStorage.setItem('savedRoom', roomCode);
         localStorage.setItem('isPlayer1', 'true');
+        
+        // 🔥 Change the browser URL to include the room code
+        window.history.pushState({}, '', `?room=${roomCode}`);
 
         setupSection.classList.add('hidden');
         gameSection.classList.remove('hidden');
@@ -480,29 +484,54 @@ createBtn.addEventListener('click', () => {
     }).catch(err => alert("Error: " + err.message));
 });
 
-// JOIN ROOM
+// NATIVE SHARE LOGIC
+shareBtn.addEventListener('click', () => {
+    const inviteLink = window.location.href; // Grabs the link with the ?room=code attached
+
+    // If on mobile, open native share sheet (WhatsApp, iMessage, etc.)
+    if (navigator.share) {
+        navigator.share({
+            title: 'Between Us',
+            text: 'Tap this link to join my private room!',
+            url: inviteLink
+        }).catch(console.error);
+    } else {
+        // If on PC, just copy to clipboard
+        navigator.clipboard.writeText(inviteLink);
+        shareBtn.innerText = "Link Copied! 📋";
+        setTimeout(() => shareBtn.innerText = "Invite Partner 🔗", 2000);
+    }
+});
+
+// JOIN ROOM (Manual)
 joinBtn.addEventListener('click', () => {
     const code = roomInput.value.trim();
     if(!code) return alert("Please enter a room code!");
+    joinExistingRoom(code);
+});
 
+// Helper function for joining so we can use it for URLs too
+function joinExistingRoom(code) {
     get(ref(db, 'rooms/' + code)).then((snapshot) => {
         if(snapshot.exists()) {
             currentRoom = code;
             isPlayer1 = false; 
 
-            // 🔥 SAVE TO BROWSER MEMORY
             localStorage.setItem('savedRoom', code);
             localStorage.setItem('isPlayer1', 'false');
+            
+            window.history.pushState({}, '', `?room=${code}`);
 
             setupSection.classList.add('hidden');
             gameSection.classList.remove('hidden');
             roomDisplay.innerText = code;
             listenToRoom(code);
         } else {
-            alert("Room not found! Check the code.");
+            alert("Room not found! The code might be expired.");
+            window.location.href = window.location.pathname; // Clear broken URL
         }
     });
-});
+}
 
 // SUBMIT ANSWER
 submitBtn.addEventListener('click', () => {
@@ -536,12 +565,9 @@ nextBtn.addEventListener('click', () => {
 
 // LEAVE ROOM LOGIC
 leaveBtn.addEventListener('click', () => {
-    // Wipe the browser memory
     localStorage.removeItem('savedRoom');
     localStorage.removeItem('isPlayer1');
-    
-    // Refresh the page to reset everything cleanly
-    window.location.reload();
+    window.location.href = window.location.pathname; // Wipes the URL clean
 });
 
 // REAL-TIME SYNC MAGIC & ANIMATION
@@ -552,23 +578,20 @@ function listenToRoom(roomCode) {
 
         const card = document.querySelector('.card');
 
-        // 🔥 THE FLIP ANIMATION LOGIC
-        // If it's a brand new question (and not just the initial load), animate it!
         if (questionText.innerText !== "Waiting for question..." && questionText.innerText !== data.question) {
-            card.classList.add('flip-out'); // Start the flip
+            card.classList.add('flip-out'); 
             
             setTimeout(() => {
-                questionText.innerText = data.question; // Swap text while it's invisible
-                card.classList.remove('flip-out');      // Flip it back in
-            }, 300); // 300ms matches the CSS transition speed
+                questionText.innerText = data.question; 
+                card.classList.remove('flip-out');      
+            }, 300); 
         } else {
-            questionText.innerText = data.question; // Just load normally if it's the first question
+            questionText.innerText = data.question; 
         }
 
         const myAnswer = isPlayer1 ? data.p1Answer : data.p2Answer;
         const partnerAnswer = isPlayer1 ? data.p2Answer : data.p1Answer;
 
-        // RESET UI IF IT'S A NEW QUESTION
         if (myAnswer === "" && partnerAnswer === "") {
             myAnswerInput.value = "";
             submitBtn.innerText = "Submit";
@@ -576,7 +599,6 @@ function listenToRoom(roomCode) {
             partnerAnswerDisplay.innerText = "Waiting...";
             nextBtn.classList.add('hidden'); 
         }
-        // IF BOTH HAVE ANSWERED
         else if (partnerAnswer) {
             if (myAnswer) {
                 partnerAnswerDisplay.innerText = partnerAnswer;
@@ -585,28 +607,35 @@ function listenToRoom(roomCode) {
                 partnerAnswerDisplay.innerText = "Partner answered! Waiting for you...";
             }
         } 
-        // WAITING ON PARTNER
         else {
             partnerAnswerDisplay.innerText = "Waiting...";
         }
     });
 }
 
-// 🔥 AUTO-RECONNECT ON REFRESH
-function checkSavedSession() {
+// 🔥 AUTO-START ENGINE: Check Local Storage OR Invite URL
+function checkInitialState() {
     const savedRoom = localStorage.getItem('savedRoom');
     const savedIsPlayer1 = localStorage.getItem('isPlayer1');
+    
+    // Read the URL to see if they clicked a WhatsApp link
+    const urlParams = new URLSearchParams(window.location.search);
+    const inviteCode = urlParams.get('room');
 
     if (savedRoom) {
         currentRoom = savedRoom;
         isPlayer1 = (savedIsPlayer1 === 'true');
+        window.history.pushState({}, '', `?room=${savedRoom}`);
         
         setupSection.classList.add('hidden');
         gameSection.classList.remove('hidden');
         roomDisplay.innerText = savedRoom;
         listenToRoom(savedRoom);
+    } else if (inviteCode) {
+        // If there's an invite link but no saved session, auto-join!
+        joinExistingRoom(inviteCode);
     }
 }
 
-// Run the check as soon as the file loads
-checkSavedSession();
+// Boot up!
+checkInitialState();
