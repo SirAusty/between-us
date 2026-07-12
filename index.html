@@ -10,13 +10,15 @@
     <div class="container">
         <h1>💞 Between Us</h1>
         
+        <!-- Room Setup -->
         <div id="setup-section">
             <button id="create-room-btn">Create Room</button>
-            <p>or</p>
+            <p class="or-text">or</p>
             <input type="text" id="room-code-input" placeholder="Enter Room Code">
             <button id="join-room-btn">Join</button>
         </div>
 
+        <!-- Game Area (Strictly hidden until joined) -->
         <div id="game-section" class="hidden">
             <h3 id="room-display">Room: <span id="current-room-code"></span></h3>
             
@@ -24,29 +26,20 @@
                 <h2 id="question-text">Waiting for question...</h2>
             </div>
 
-            <div class="answers">
+            <div class="answers-container">
                 <textarea id="my-answer" placeholder="Type your answer..."></textarea>
-                <button id="submit-btn">Submit</button>
+                <button id="submit-btn">Send!</button>
             </div>
 
-            <div id="partner-status">
-                <p>Partner's Answer: <span id="partner-answer-text">Waiting...</span></p>
-            </div>
-        </div>
-    </div>
-
-                <div id="partner-status">
-                <p>Partner's Answer: <span id="partner-answer-text">Waiting...</span></p>
+            <div id="partner-status" class="status-box">
+                <p>Partner's Answer:<br><span id="partner-answer-text">Waiting...</span></p>
             </div>
             
-            <button id="next-question-btn" class="hidden" style="margin-top: 15px; background-color: #2ed573;">Next Question ➡️</button>
+            <button id="next-question-btn" class="hidden action-btn">Next Question ➡️</button>
         </div>
     </div>
 
-    <script type="module" src="app.js"></script>
-</body>
-</html>
-
+    <!-- Firebase SDKs -->
     <script type="module" src="app.js"></script>
 </body>
 </html>
