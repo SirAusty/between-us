@@ -26,32 +26,46 @@ const questionText = document.getElementById('question-text');
 const myAnswerInput = document.getElementById('my-answer');
 const submitBtn = document.getElementById('submit-btn');
 const partnerAnswerDisplay = document.getElementById('partner-answer-text');
-const nextBtn = document.getElementById('next-question-btn'); // NEW BUTTON
+const nextBtn = document.getElementById('next-question-btn'); 
+const categorySelect = document.getElementById('category-select'); // NEW: The Category Dropdown
 
 let currentRoom = null;
 let isPlayer1 = false; 
 
-// Expanded Question Pool
-const questionsPool = [
-    "What's your favorite memory of us?",
-    "If you could relive one day with me, which day would it be?",
-    "What is one thing I do that makes you smile?",
-    "What's a secret dream you haven't told many people about?",
-    "What was your exact first impression of me?",
-    "What is your biggest relationship fear?",
-    "If we had a free weekend and unlimited money, what would we do?",
-    "What's something nobody knows about you?",
-    "What is the most embarrassing thing you've ever done?"
-];
+// RESTRUCTURED: The Question Bank
+const questionBank = {
+    mixed: [
+        "What's a secret dream you haven't told many people about?",
+        "If you could teleport anywhere right now, where would we go?",
+        "What is the most embarrassing thing you've ever done?"
+    ],
+    couples: [
+        "What's your favorite memory of us?",
+        "If you could relive one day with me, which day would it be?",
+        "What is one thing I do that makes you smile?",
+        "What is your biggest relationship fear?",
+        "What was your exact first impression of me?"
+    ],
+    funny: [
+        "Which celebrity would definitely survive a zombie apocalypse?",
+        "What is your weirdest habit?",
+        "If animals could talk, which one would be the rudest?"
+    ]
+};
 
 // CREATE ROOM
 createBtn.addEventListener('click', () => {
     const roomCode = Math.floor(1000 + Math.random() * 9000).toString();
     currentRoom = roomCode;
     isPlayer1 = true; 
-    const randomQuestion = questionsPool[Math.floor(Math.random() * questionsPool.length)];
+    
+    // Grab the chosen category and pick a question from it
+    const chosenCategory = categorySelect.value;
+    const selectedPool = questionBank[chosenCategory];
+    const randomQuestion = selectedPool[Math.floor(Math.random() * selectedPool.length)];
 
     set(ref(db, 'rooms/' + roomCode), {
+        category: chosenCategory, // Save the category to the database!
         question: randomQuestion,
         p1Answer: "",
         p2Answer: ""
@@ -95,13 +109,17 @@ submitBtn.addEventListener('click', () => {
 
 // NEXT QUESTION LOGIC
 nextBtn.addEventListener('click', () => {
-    const randomQuestion = questionsPool[Math.floor(Math.random() * questionsPool.length)];
-    
-    // Wipe the answers and push the new question to the database
-    update(ref(db, 'rooms/' + currentRoom), {
-        question: randomQuestion,
-        p1Answer: "",
-        p2Answer: ""
+    // Ask Firebase what category this room is playing
+    get(ref(db, 'rooms/' + currentRoom + '/category')).then((snapshot) => {
+        const roomCategory = snapshot.val() || 'mixed'; 
+        const selectedPool = questionBank[roomCategory];
+        const randomQuestion = selectedPool[Math.floor(Math.random() * selectedPool.length)];
+        
+        update(ref(db, 'rooms/' + currentRoom), {
+            question: randomQuestion,
+            p1Answer: "",
+            p2Answer: ""
+        });
     });
 });
 
