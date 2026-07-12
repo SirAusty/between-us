@@ -450,13 +450,15 @@ const questionBank = {
     ]
 }; 
 
+// Grab the new Leave button
+const leaveBtn = document.getElementById('leave-room-btn');
+
 // CREATE ROOM
 createBtn.addEventListener('click', () => {
     const roomCode = Math.floor(1000 + Math.random() * 9000).toString();
     currentRoom = roomCode;
     isPlayer1 = true; 
     
-    // Grab the chosen category and pick a question from it
     const chosenCategory = categorySelect.value;
     const selectedPool = questionBank[chosenCategory];
     const randomQuestion = selectedPool[Math.floor(Math.random() * selectedPool.length)];
@@ -467,6 +469,10 @@ createBtn.addEventListener('click', () => {
         p1Answer: "",
         p2Answer: ""
     }).then(() => {
+        // 🔥 SAVE TO BROWSER MEMORY
+        localStorage.setItem('savedRoom', roomCode);
+        localStorage.setItem('isPlayer1', 'true');
+
         setupSection.classList.add('hidden');
         gameSection.classList.remove('hidden');
         roomDisplay.innerText = roomCode;
@@ -483,6 +489,11 @@ joinBtn.addEventListener('click', () => {
         if(snapshot.exists()) {
             currentRoom = code;
             isPlayer1 = false; 
+
+            // 🔥 SAVE TO BROWSER MEMORY
+            localStorage.setItem('savedRoom', code);
+            localStorage.setItem('isPlayer1', 'false');
+
             setupSection.classList.add('hidden');
             gameSection.classList.remove('hidden');
             roomDisplay.innerText = code;
@@ -523,6 +534,16 @@ nextBtn.addEventListener('click', () => {
     });
 });
 
+// LEAVE ROOM LOGIC
+leaveBtn.addEventListener('click', () => {
+    // Wipe the browser memory
+    localStorage.removeItem('savedRoom');
+    localStorage.removeItem('isPlayer1');
+    
+    // Refresh the page to reset everything cleanly
+    window.location.reload();
+});
+
 // REAL-TIME SYNC MAGIC
 function listenToRoom(roomCode) {
     onValue(ref(db, 'rooms/' + roomCode), (snapshot) => {
@@ -554,3 +575,21 @@ function listenToRoom(roomCode) {
     });
 }
 
+// 🔥 AUTO-RECONNECT ON REFRESH
+function checkSavedSession() {
+    const savedRoom = localStorage.getItem('savedRoom');
+    const savedIsPlayer1 = localStorage.getItem('isPlayer1');
+
+    if (savedRoom) {
+        currentRoom = savedRoom;
+        isPlayer1 = (savedIsPlayer1 === 'true');
+        
+        setupSection.classList.add('hidden');
+        gameSection.classList.remove('hidden');
+        roomDisplay.innerText = savedRoom;
+        listenToRoom(savedRoom);
+    }
+}
+
+// Run the check as soon as the file loads
+checkSavedSession();
